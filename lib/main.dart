@@ -1,5 +1,6 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:mood_application_project/screens/moodhistory.dart';
 import 'models/mood.dart';
 import 'data/questions.dart';
 import 'screens/startscreen.dart';
@@ -18,6 +19,7 @@ class MoodTestApp extends StatefulWidget {
 }
 
 class _MoodTestAppState extends State<MoodTestApp> {
+  int _selectedIndex =0;
   int currentQuestionIndex = 0;
   Map<Mood, int> scores = {
     Mood.Happy: 0,
@@ -61,49 +63,56 @@ class _MoodTestAppState extends State<MoodTestApp> {
     });
   }
 
-  void saveResult() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Result saved successfully!')),
-    );
-  }
+    void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index; // Reset questions when switching tabs
+      
+    });}
 
-  void showSuggestions() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Here are some suggestions to improve your mood!')),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Mood Test',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: Navigator(
-        pages: [
-          if (!testStarted)
-            MaterialPage(child: StartScreen(onStartTest: startTest))
-          else if (testEnded && finalResult != null)
-            MaterialPage(
-              child: ResultScreen(
-                resultMood: finalResult!,
-                onRestart: restartTest,
-                onSave: saveResult,
-                onSuggest: showSuggestions,
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: Scaffold(
+        appBar: AppBar(title: const Text('Mood Test App')),
+        body: Navigator(
+          pages: [
+             if (_selectedIndex == 1) 
+              MaterialPage(child: MoodHistoryScreen()) 
+            else if (!testStarted)
+              MaterialPage(child: StartScreen(onStartTest: startTest))
+            else if (testEnded)
+              MaterialPage(
+                child: ResultScreen(
+                  
+                  onRestart: restartTest, resultMood: finalResult, onSave: () {  }, onSuggest: () { },
+                ),
+              )
+            else
+              MaterialPage(
+                child: QuestionScreen(
+                  question: questions[currentQuestionIndex],
+                  onAnswerSelected: answerQuestion,
+                  onStartTest: restartTest,
+                ),
               ),
-            )
-          else
-            MaterialPage(
-              child: QuestionScreen(
-                question: questions[currentQuestionIndex],
-                onAnswerSelected: answerQuestion,
-                onStartTest: restartTest,
-              ),
-            ),
-        ],
-        onPopPage: (route, result) => route.didPop(result),
+          ],
+          onPopPage: (route, result) => route.didPop(result),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          items: [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Start Test'),
+            BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Mood History'),
+          ],
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          
+        ),
       ),
+      
     );
   }
 }

@@ -4,7 +4,7 @@ import 'package:mood_application_project/screens/startscreen.dart';
 import '../models/mood.dart';
 
 class ResultScreen extends StatelessWidget {
-  final Mood resultMood;
+  
   final VoidCallback onRestart;
   final VoidCallback onSave;
   final VoidCallback onSuggest;
@@ -26,6 +26,8 @@ class ResultScreen extends StatelessWidget {
     Mood.Neutral: "You're feeling Neutral. Find a spark to light up your day. ⚖️",
     Mood.Relaxed: "You're feeling Relaxed. Enjoy the peace. 🌿",
   };
+  
+  final dynamic resultMood;
 
   @override
   Widget build(BuildContext context) {
