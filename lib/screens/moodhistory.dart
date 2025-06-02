@@ -1,7 +1,5 @@
-//secreens/moodhistoryscreen.dart
-
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:mood_application_project/screens/filterscreen.dart';
 import '../database/database_helper.dart';
 
 class MoodHistoryScreen extends StatefulWidget {
@@ -13,6 +11,18 @@ class MoodHistoryScreen extends StatefulWidget {
 
 class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
   List<Map<String, dynamic>> moodList = [];
+  
+  // All filters are OFF by default so that ALL moods are shown initially.
+  // If a user toggles one ON (true), only those moods will be displayed.
+  Map<String, bool> activeFilters = {
+    "Happy": false,
+    "Confident": false,
+    "Tired": false,
+    "Loved": false,
+    "Sad": false,
+    "Neutral": false,
+    "Relaxed": false,
+  };
 
   @override
   void initState() {
@@ -20,16 +30,38 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
     loadMoodHistory();
   }
 
-  Future<void> loadMoodHistory() async {
+  /// Helper function to normalize mood types.
+  /// Converts "sad", "SAD", or "sAd" to "Sad".
+  String normalizeMoodType(String mood) {
+    if (mood.isEmpty) return mood;
+    return mood[0].toUpperCase() + mood.substring(1).toLowerCase();
+  }
+
+  Future<void> loadMoodHistory({Map<String, bool>? filters}) async {
     final moods = await DatabaseHelper.instance.getMoodHistory();
-    setState(() {
+
+    // If filters are provided and at least one is ON, we filter the moods.
+    if (filters != null && filters.containsValue(true)) {
+      moodList = moods.where((mood) {
+        final moodStr = (mood['moodType'] as String?) ?? "";
+        final normalizedMood = normalizeMoodType(moodStr.trim());
+        // Return true if the normalized mood type is enabled in filters.
+        return filters[normalizedMood] == true;
+      }).toList();
+
+      print("Filtered Mood History: $moodList");  // Debugging
+    } else {
+      // If no filter is on, show all moods.
       moodList = moods;
-    });
+      print("Showing all moods (no filters applied)");
+    }
+
+    setState(() {});
   }
 
   Future<void> deleteMood(int id) async {
     await DatabaseHelper.instance.deleteMood(id);
-    loadMoodHistory(); // Refresh list after deletion
+    loadMoodHistory(filters: activeFilters); // Refresh using current filters.
   }
 
   void _showMoodDetailsDialog(BuildContext context, Map<String, dynamic> mood) {
@@ -67,6 +99,43 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Mood History')),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blue),
+              child: Text("Mood Filters", style: TextStyle(color: Colors.white, fontSize: 20)),
+            ),
+            ListTile(
+              title: const Text("Filter Results"),
+              leading: const Icon(Icons.filter_list),
+              onTap: () async {
+                // Navigate to FilterScreen with the current filters.
+                final selectedFilters = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FilterScreen(currentFilters: activeFilters),
+                  ),
+                );
+
+                if (selectedFilters != null) {
+                  print("Applying Filters: $selectedFilters"); // Debugging
+                  setState(() {
+                    activeFilters = selectedFilters; // Update filters globally.
+                  });
+
+                  loadMoodHistory(filters: activeFilters); // Apply filters.
+                } else {
+                  print("No filters selected, showing all moods."); // Debugging
+                  loadMoodHistory(); // Show all moods if nothing is returned.
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+      backgroundColor: const Color.fromARGB(255, 37, 109, 142),
       body: moodList.isEmpty
           ? const Center(
               child: Text('No mood history available', style: TextStyle(fontSize: 20)),
@@ -105,10 +174,10 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
                       title: Text(mood['moodType'], style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(mood['description']),
                       trailing: Text(
-                        mood['date'].split('T')[0], // Show date only
+                        mood['date'].split('T')[0],
                         style: const TextStyle(color: Colors.grey),
                       ),
-                      onTap: () => _showMoodDetailsDialog(context, mood), // Opens mood details dialog
+                      onTap: () => _showMoodDetailsDialog(context, mood),
                     ),
                   ),
                 );
@@ -117,10 +186,3 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
     );
   }
 }
-
-
-
-
-
-
-

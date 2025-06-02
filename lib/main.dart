@@ -84,7 +84,7 @@ class _MoodTestAppState extends State<MoodTestApp> {
       title: 'Mood Test',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: Scaffold(
-        appBar: AppBar(title: const Text('Mood Test App')),
+       
         body: Navigator(
           pages: [
              if (_selectedIndex == 1) 

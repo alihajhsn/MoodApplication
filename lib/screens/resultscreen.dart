@@ -108,13 +108,15 @@ Future<void> updateMoodNote(int moodId, String note) async {
    @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Result Screen')),
+      backgroundColor: const Color.fromARGB(255, 37, 109, 142),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(messages[resultMood]!, style: const TextStyle(fontSize: 24), textAlign: TextAlign.center),
+            Text(messages[resultMood]!, style: const TextStyle(fontSize: 24, color: Colors.white), textAlign: TextAlign.center),
+            SizedBox(height: 8,),
             ElevatedButton(onPressed: onRestart, child: const Text('Restart Test')),
+            SizedBox(height: 8,),
             ElevatedButton(
               onPressed: () async {
                 int moodId = await saveMoodResult(context); // ✅ Ensure mood ID is retrieved first

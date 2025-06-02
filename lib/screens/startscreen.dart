@@ -9,9 +9,7 @@ class StartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Start Screen'),
-      ),
+
       backgroundColor: const Color.fromARGB(255, 37, 109, 142),
       body: Center(
         child: Column(

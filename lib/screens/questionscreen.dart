@@ -18,18 +18,7 @@ class QuestionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Question Screen'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => StartScreen(onStartTest: onStartTest),
-            ),
-          ),
-        ),
-      ),
+
       backgroundColor: const Color.fromARGB(255, 37, 109, 142),
       body: Center(
         child: Column(
