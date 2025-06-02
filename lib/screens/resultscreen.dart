@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mood_application_project/screens/startscreen.dart';
-import 'package:sqflite/sqflite.dart';
 import '../models/mood.dart';
 import '../database/database_helper.dart';
-import 'moodhistory.dart'; // Import Mood History Screen
 
 class ResultScreen extends StatelessWidget {
   final VoidCallback onRestart;
@@ -32,30 +29,27 @@ class ResultScreen extends StatelessWidget {
       resultMood.toString(),
       messages[resultMood]!,
     );
-     ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text("Mood saved successfully! ID: $result"),
-      duration: Duration(seconds: 2), // SnackBar visibility time
-    ));
-  }
 
-  void _saveNote(BuildContext context,String note) async {
-    final Database db = await DatabaseHelper.instance.database;
-    await db.insert(
-      'mood_history',
-      {'mood': resultMood.toString(), 'note': note}, // Ensure the database has a 'note' column
-      conflictAlgorithm: ConflictAlgorithm.replace,
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Mood saved successfully! ID: $result"),
+        duration: Duration(seconds: 2),
+      ),
     );
-    
-      ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text("Note saved successfully!"),
-      duration: Duration(seconds: 2), // Duration for visibility
-    ),
-  );
   }
 
-  void _showAddNoteDialog(BuildContext context) {
+  void _saveNote(BuildContext context, int moodId, String note) async {
+    await DatabaseHelper.instance.updateMoodNote(moodId, note);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Note saved successfully!"),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showAddNoteDialog(BuildContext context, int moodId) {
     TextEditingController _noteController = TextEditingController();
 
     showDialog(
@@ -69,19 +63,16 @@ class ResultScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
               child: Text("Cancel"),
             ),
             TextButton(
-onPressed: () {
-  if (_noteController.text.isNotEmpty) {
-    _saveNote(context, _noteController.text); // Ensure context is passed
-  }
-  Navigator.pop(context);
-},
-
+              onPressed: () {
+                if (_noteController.text.isNotEmpty) {
+                  _saveNote(context, moodId, _noteController.text);
+                }
+                Navigator.pop(context);
+              },
               child: Text("Save"),
             ),
           ],
@@ -99,44 +90,28 @@ onPressed: () {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Your Mood Result', style: TextStyle(fontSize: 20, color: Colors.white)),
-            const SizedBox(height: 20),
-            Text(messages[resultMood]!, style: const TextStyle(fontSize: 24, color: Colors.white), textAlign: TextAlign.center),
-            const SizedBox(height: 30),
+            Text(messages[resultMood]!, style: const TextStyle(fontSize: 24, color: Colors.white), textAlign: TextAlign.center ,),
+            const SizedBox(height: 8,),
             ElevatedButton(onPressed: onRestart, child: const Text('Restart Test')),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8,),
             ElevatedButton(
-  onPressed: () async {
-    await DatabaseHelper.instance.saveMood(
-      resultMood.toString(),
-      messages[resultMood]!,
-      note: "", // Passing an empty note if user doesn't add one
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Mood saved successfully!"),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  },
-  child: const Text('Save Result'),
-),
- // Save mood and navigate to history
-            const SizedBox(height: 12),
+              onPressed: () => saveMoodResult(context),
+              child: const Text('Save Result'),
+            ),
+            const SizedBox(height: 8,),
             ElevatedButton(
-              onPressed: () => _showAddNoteDialog(context),
+              onPressed: () => _showAddNoteDialog(context, 1), // Temporary ID, replace dynamically
               child: const Text('Add Note'),
             ),
-            const SizedBox(height: 12),
-            if (resultMood == Mood.Sad || resultMood == Mood.Tired || resultMood == Mood.Neutral)
-              ElevatedButton(onPressed: onSuggest, child: const Text('Get Suggestions')),
           ],
         ),
       ),
     );
   }
 }
+
+
+
 
 
 

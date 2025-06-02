@@ -13,6 +13,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Ensure async functions work
  
 
+
   runApp(MoodTestApp()); // Start the app after deletion
 }
 

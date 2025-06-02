@@ -1,3 +1,5 @@
+//secreens/moodhistoryscreen.dart
+
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../database/database_helper.dart';
@@ -30,39 +32,36 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
     loadMoodHistory(); // Refresh list after deletion
   }
 
-void _showMoodDetailsDialog(BuildContext context, Map<String, dynamic> mood, List<Map<String, dynamic>> moodList) {
-  print("Mood list data: $moodList"); // Debugging - prints the full list of moods
-
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: Text(mood['moodType']),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Description: ${mood['description']}"),
-            const SizedBox(height: 10),
-            Text(
-              mood.containsKey('note') && mood['note'] != null && mood['note'].isNotEmpty
-                  ? "Note: ${mood['note']}"
-                  : "No note added",
-              style: const TextStyle(fontStyle: FontStyle.italic),
+  void _showMoodDetailsDialog(BuildContext context, Map<String, dynamic> mood) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(mood['moodType']),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Description: ${mood['description']}"),
+              const SizedBox(height: 10),
+              Text(
+                mood['note'] != null && mood['note'].isNotEmpty
+                    ? "Note: ${mood['note']}"
+                    : "No note added",
+                style: const TextStyle(fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Close"),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Close"),
-          ),
-        ],
-      );
-    },
-  );
-}
-
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +108,7 @@ void _showMoodDetailsDialog(BuildContext context, Map<String, dynamic> mood, Lis
                         mood['date'].split('T')[0], // Show date only
                         style: const TextStyle(color: Colors.grey),
                       ),
-                      onTap: () => _showMoodDetailsDialog(context, mood,moodList), // Opens mood details dialog
+                      onTap: () => _showMoodDetailsDialog(context, mood), // Opens mood details dialog
                     ),
                   ),
                 );
@@ -118,6 +117,7 @@ void _showMoodDetailsDialog(BuildContext context, Map<String, dynamic> mood, Lis
     );
   }
 }
+
 
 
 

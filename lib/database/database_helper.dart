@@ -17,11 +17,10 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDB() async {
-    sqfliteFfiInit(); // Ensure database factory is initialized
+    sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
 
-    // Use local database path (Windows compatible)
-    String path = join(Directory.current.path, 'mood_history.db');
+    String path = join(Directory.current.path, 'moods.db'); // ✅ Fix database name
     
     return await databaseFactory.openDatabase(
       path,
@@ -33,8 +32,7 @@ class DatabaseHelper {
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               moodType TEXT,
               description TEXT,
-              note TEXT,  -- ✅ Added 'note' column
-              
+              note TEXT, 
               date TEXT
             )
           ''');
@@ -43,65 +41,51 @@ class DatabaseHelper {
     );
   }
 
-Future<int> saveMood(String moodType, String description, {String? note}) async {
-  final Database db = await instance.database;
+  Future<int> saveMood(String moodType, String description, {String? note}) async {
+    final Database db = await instance.database;
 
-  print("Saving mood: $moodType, Description: $description, Note: $note");
-  return await db.insert(
-    'moods',
-    {
-      'moodType': moodType,
-      'description': description,
-      'note': note ?? "", // Adds note, defaults to empty string if null
-      'date': DateTime.now().toIso8601String(),
-    },
-    conflictAlgorithm: ConflictAlgorithm.replace,
-  );
-}
+    print("Saving mood: $moodType, Description: $description, Note: $note");
 
+    return await db.insert(
+      'moods',  
+      {
+        'moodType': moodType,
+        'description': description,
+        'note': note ?? "", 
+        'date': DateTime.now().toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> updateMoodNote(int id, String note) async {
+    final Database db = await instance.database;
+
+    await db.update(
+      'moods', 
+      {'note': note},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    print("Updated Mood ID: $id with Note: $note");
+  }
 
   Future<int> deleteMood(int id) async {
-  final db = await instance.database;
-  return await db.delete('moods', where: 'id = ?', whereArgs: [id]);
-}
-
+    final db = await instance.database;
+    return await db.delete('moods', where: 'id = ?', whereArgs: [id]);
+  }
 
   Future<List<Map<String, dynamic>>> getMoodHistory() async {
     final db = await instance.database;
-    return await db.query('moods', orderBy: 'id DESC');
+    final moods = await db.query('moods', orderBy: 'id DESC');
+    
+    print("Retrieved mood history: $moods"); // Debugging step
+    return moods;
   }
-
-
-Future<int> saveMoodWithNote(String moodType, String description, String note) async {
-  final Database db = await instance.database;
   
-  int result = await db.insert(
-    'mood_history',
-    {
-      'moodType': moodType,
-      'description': description,
-      'note': note,
-      'date': DateTime.now().toIso8601String(),
-    },
-    conflictAlgorithm: ConflictAlgorithm.replace,
-  );
-
-  print("Mood saved? ID: $result"); // Debugging check
-  return result;
-}
-
-Future<void> deleteDatabaseFile() async {
-  String dbPath = join(Directory.current.path, 'mood_history.db');
-  File dbFile = File(dbPath);
-
-  if (await dbFile.exists()) {
-    await dbFile.delete();
-    print("Database deleted successfully!");
-  } else {
-    print("Database file not found.");
-  }
-}
-
 
 }
+
+
 
