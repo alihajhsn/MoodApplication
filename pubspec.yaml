@@ -4,11 +4,15 @@ publish_to: 'none'
 version: 0.1.0
 
 environment:
-  sdk: ^3.7.0
+  sdk: ">=3.7.0 <4.0.0" # Ensures compatibility
 
 dependencies:
   flutter:
     sdk: flutter
+  sqflite: ^2.3.0 # Standard SQLite package for database storage
+  path_provider: ^2.0.15 # Helps in file system path management
+  provider: ^6.0.5 # State management (optional if needed)
+  sqflite_common_ffi: ^2.3.5
 
 dev_dependencies:
   flutter_test:
@@ -17,3 +21,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+

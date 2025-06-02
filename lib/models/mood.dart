@@ -1,3 +1,5 @@
+//models/mood.dart
+
 enum Mood { Happy, Confident, Tired, Loved, Sad, Neutral, Relaxed}
 
 const Map<Mood, String> PersonsMood = {
