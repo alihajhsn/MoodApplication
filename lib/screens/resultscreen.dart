@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sqflite/sqflite.dart';
 import '../models/mood.dart';
 import '../database/database_helper.dart';
 
@@ -24,32 +25,55 @@ class ResultScreen extends StatelessWidget {
     Mood.Relaxed: "You're feeling Relaxed. Enjoy the peace. 🌿",
   };
 
-  Future<void> saveMoodResult(BuildContext context) async {
-    int result = await DatabaseHelper.instance.saveMood(
-      resultMood.toString(),
-      messages[resultMood]!,
-    );
+Future<int> saveMoodResult(BuildContext context) async {
+  int moodId = await DatabaseHelper.instance.saveMood(
+    resultMood.toString(),
+    messages[resultMood]!,
+  );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Mood saved successfully! ID: $result"),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
+  print("Mood saved with ID: $moodId"); // Debugging
 
-  void _saveNote(BuildContext context, int moodId, String note) async {
-    await DatabaseHelper.instance.updateMoodNote(moodId, note);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text("Mood saved successfully!"),
+      duration: Duration(seconds: 2),
+    ),
+  );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Note saved successfully!"),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
+  return moodId; // ✅ Return correct ID for note attachment
+}
 
-  void _showAddNoteDialog(BuildContext context, int moodId) {
+
+
+void _saveNote(BuildContext context, int moodId, String note) async {
+  await DatabaseHelper.instance.updateMoodNote(moodId, note); // ✅ Correct mood entry
+
+  print("Note saved!"); // Debugging confirmation
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text("Note saved successfully!"),
+      duration: Duration(seconds: 2),
+    ),
+  );
+}
+
+Future<void> updateMoodNote(int moodId, String note) async {
+  final Database db = await DatabaseHelper.instance.database;
+
+  await db.update(
+    'moods', 
+    {'note': note},
+    where: 'id = ?',
+    whereArgs: [moodId], // ✅ Ensure correct mood ID is updated
+  );
+
+  print("Updated Mood ID: $moodId with Note: $note"); // Debugging
+}
+
+
+
+ void _showAddNoteDialog(BuildContext context, int moodId) {
     TextEditingController _noteController = TextEditingController();
 
     showDialog(
@@ -81,27 +105,29 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
-  @override
+   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Result Screen')),
-      backgroundColor: const Color.fromARGB(255, 37, 109, 142),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(messages[resultMood]!, style: const TextStyle(fontSize: 24, color: Colors.white), textAlign: TextAlign.center ,),
-            const SizedBox(height: 8,),
+            Text(messages[resultMood]!, style: const TextStyle(fontSize: 24), textAlign: TextAlign.center),
             ElevatedButton(onPressed: onRestart, child: const Text('Restart Test')),
-            const SizedBox(height: 8,),
             ElevatedButton(
-              onPressed: () => saveMoodResult(context),
-              child: const Text('Save Result'),
-            ),
-            const SizedBox(height: 8,),
-            ElevatedButton(
-              onPressed: () => _showAddNoteDialog(context, 1), // Temporary ID, replace dynamically
-              child: const Text('Add Note'),
+              onPressed: () async {
+                int moodId = await saveMoodResult(context); // ✅ Ensure mood ID is retrieved first
+
+                print("Latest Mood ID for note attachment: $moodId"); // Debugging
+
+                if (moodId != 0) {
+                  _showAddNoteDialog(context, moodId); // ✅ Ensure correct mood entry is updated
+                } else {
+                  print("Error: Mood ID is invalid."); // Debugging if something goes wrong
+                }
+              },
+              child: const Text('Save Result & Add Note'),
             ),
           ],
         ),
