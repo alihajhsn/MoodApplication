@@ -1,5 +1,8 @@
+// screens/moodhistory.dart
+
 import 'package:flutter/material.dart';
 import 'package:mood_application_project/screens/filterscreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
 
 class MoodHistoryScreen extends StatefulWidget {
@@ -12,8 +15,7 @@ class MoodHistoryScreen extends StatefulWidget {
 class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
   List<Map<String, dynamic>> moodList = [];
   
-  // All filters are OFF by default so that ALL moods are shown initially.
-  // If a user toggles one ON (true), only those moods will be displayed.
+  // Maintain a map of available mood filters.
   Map<String, bool> activeFilters = {
     "Happy": false,
     "Confident": false,
@@ -27,41 +29,44 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    loadMoodHistory();
+    loadSavedFilter();
   }
-
-  /// Helper function to normalize mood types.
-  /// Converts "sad", "SAD", or "sAd" to "Sad".
-  String normalizeMoodType(String mood) {
-    if (mood.isEmpty) return mood;
-    return mood[0].toUpperCase() + mood.substring(1).toLowerCase();
+  
+  Future<void> loadSavedFilter() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Retrieve a saved list of selected moods (if any)
+    List<String>? savedMoodTypes = prefs.getStringList('selectedMoodTypes');
+    setState(() {
+      activeFilters = {
+        "Happy": savedMoodTypes?.contains("Happy") ?? false,
+        "Confident": savedMoodTypes?.contains("Confident") ?? false,
+        "Tired": savedMoodTypes?.contains("Tired") ?? false,
+        "Loved": savedMoodTypes?.contains("Loved") ?? false,
+        "Sad": savedMoodTypes?.contains("Sad") ?? false,
+        "Neutral": savedMoodTypes?.contains("Neutral") ?? false,
+        "Relaxed": savedMoodTypes?.contains("Relaxed") ?? false,
+      };
+    });
+    loadMoodHistory(moodTypes: savedMoodTypes);
   }
-
-  Future<void> loadMoodHistory({Map<String, bool>? filters}) async {
-    final moods = await DatabaseHelper.instance.getMoodHistory();
-
-    // If filters are provided and at least one is ON, we filter the moods.
-    if (filters != null && filters.containsValue(true)) {
-      moodList = moods.where((mood) {
-        final moodStr = (mood['moodType'] as String?) ?? "";
-        final normalizedMood = normalizeMoodType(moodStr.trim());
-        // Return true if the normalized mood type is enabled in filters.
-        return filters[normalizedMood] == true;
-      }).toList();
-
-      print("Filtered Mood History: $moodList");  // Debugging
+  
+  // This function now accepts a list of selected mood types.
+  Future<void> loadMoodHistory({List<String>? moodTypes}) async {
+    if (moodTypes != null && moodTypes.isNotEmpty) {
+      moodList = await DatabaseHelper.instance.getFilteredMoods(moodTypes);
     } else {
-      // If no filter is on, show all moods.
-      moodList = moods;
-      print("Showing all moods (no filters applied)");
+      moodList = await DatabaseHelper.instance.getMoodHistory();
     }
-
     setState(() {});
   }
 
   Future<void> deleteMood(int id) async {
     await DatabaseHelper.instance.deleteMood(id);
-    loadMoodHistory(filters: activeFilters); // Refresh using current filters.
+    List<String> selectedMoodTypes = activeFilters.entries
+        .where((entry) => entry.value)
+        .map((entry) => entry.key)
+        .toList();
+    loadMoodHistory(moodTypes: selectedMoodTypes);
   }
 
   void _showMoodDetailsDialog(BuildContext context, Map<String, dynamic> mood) {
@@ -77,7 +82,7 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
               Text("Description: ${mood['description']}"),
               const SizedBox(height: 10),
               Text(
-                mood['note'] != null && mood['note'].isNotEmpty
+                (mood['note'] != null && mood['note'].isNotEmpty)
                     ? "Note: ${mood['note']}"
                     : "No note added",
                 style: const TextStyle(fontStyle: FontStyle.italic),
@@ -105,30 +110,49 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: Colors.blue),
-              child: Text("Mood Filters", style: TextStyle(color: Colors.white, fontSize: 20)),
+              child: Text("Mood Filters",
+                  style: TextStyle(color: Colors.white, fontSize: 20)),
             ),
             ListTile(
               title: const Text("Filter Results"),
               leading: const Icon(Icons.filter_list),
               onTap: () async {
-                // Navigate to FilterScreen with the current filters.
-                final selectedFilters = await Navigator.push(
+                final prefs = await SharedPreferences.getInstance();
+                // Pass the current filters to the FilterScreen.
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => FilterScreen(currentFilters: activeFilters),
+                    builder: (context) =>
+                        FilterScreen(currentFilters: activeFilters),
                   ),
                 );
 
-                if (selectedFilters != null) {
-                  print("Applying Filters: $selectedFilters"); // Debugging
+                if (result != null && result is Map<String, bool>) {
                   setState(() {
-                    activeFilters = selectedFilters; // Update filters globally.
+                    activeFilters = result;
                   });
-
-                  loadMoodHistory(filters: activeFilters); // Apply filters.
+                  // Build a list of mood types that are selected (true).
+                  List<String> selectedMoodTypes = activeFilters.entries
+                      .where((entry) => entry.value)
+                      .map((entry) => entry.key)
+                      .toList();
+                  // Save the selected moods.
+                  await prefs.setStringList('selectedMoodTypes', selectedMoodTypes);
+                  loadMoodHistory(moodTypes: selectedMoodTypes);
                 } else {
-                  print("No filters selected, showing all moods."); // Debugging
-                  loadMoodHistory(); // Show all moods if nothing is returned.
+                  await prefs.remove('selectedMoodTypes');
+                  setState(() {
+                    activeFilters = {
+                      "Happy": false,
+                      "Confident": false,
+                      "Tired": false,
+                      "Loved": false,
+                      "Sad": false,
+                      "Neutral": false,
+                      "Relaxed": false,
+                    };
+                  });
+                  loadMoodHistory();
                 }
               },
             ),
@@ -138,7 +162,8 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
       backgroundColor: const Color.fromARGB(255, 37, 109, 142),
       body: moodList.isEmpty
           ? const Center(
-              child: Text('No mood history available', style: TextStyle(fontSize: 20)),
+              child: Text('No mood history available',
+                  style: TextStyle(fontSize: 20)),
             )
           : ListView.builder(
               itemCount: moodList.length,
@@ -150,28 +175,34 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
                   onDismissed: (direction) {
                     deleteMood(mood['id']);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("${mood['moodType']} deleted")),
-                    );
+                        SnackBar(content: Text("${mood['moodType']} deleted")));
                   },
                   background: Container(
                     alignment: Alignment.centerLeft,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     color: Colors.red,
-                    child: const Icon(Icons.delete, color: Colors.white),
+                    child:
+                        const Icon(Icons.delete, color: Colors.white),
                   ),
                   secondaryBackground: Container(
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     color: Colors.red,
-                    child: const Icon(Icons.delete, color: Colors.white),
+                    child:
+                        const Icon(Icons.delete, color: Colors.white),
                   ),
                   child: Card(
                     elevation: 4,
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     child: ListTile(
-                      leading: const Icon(Icons.mood, size: 30, color: Colors.blue),
-                      title: Text(mood['moodType'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                      leading: const Icon(Icons.mood,
+                          size: 30, color: Colors.blue),
+                      title: Text(mood['moodType'],
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold)),
                       subtitle: Text(mood['description']),
                       trailing: Text(
                         mood['date'].split('T')[0],

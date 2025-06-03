@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
+//database/database_helper.dart
+
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+// ignore: depend_on_referenced_packages
 import 'package:path/path.dart';
 import 'dart:io';
 
@@ -80,10 +81,24 @@ class DatabaseHelper {
     final db = await instance.database;
     final moods = await db.query('moods', orderBy: 'id DESC');
     
-    print("Retrieved mood history: $moods"); // Debugging step
     return moods;
   }
   
+// database/database_helper.dart (excerpt)
+
+Future<List<Map<String, dynamic>>> getFilteredMoods(List<String> moodTypes) async {
+  final db = await instance.database;
+  // Create placeholders (?) for each mood type.
+  String placeholders = List.filled(moodTypes.length, '?').join(', ');
+  final moods = await db.query(
+    'moods',
+    where: 'moodType IN ($placeholders)',
+    whereArgs: moodTypes,
+    orderBy: 'id DESC',
+  );
+  return moods;
+}
+
 
 }
 

@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 import '../models/mood.dart';
 import '../database/database_helper.dart';
 
 class ResultScreen extends StatelessWidget {
   final VoidCallback onRestart;
-  final VoidCallback onSuggest;
   final dynamic resultMood;
 
   const ResultScreen({
     Key? key,
     required this.resultMood,
     required this.onRestart,
-    required this.onSuggest,
+    
   }) : super(key: key);
 
   static const Map<Mood, String> messages = {
@@ -31,8 +29,6 @@ Future<int> saveMoodResult(BuildContext context) async {
     messages[resultMood]!,
   );
 
-  print("Mood saved with ID: $moodId"); // Debugging
-
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text("Mood saved successfully!"),
@@ -40,16 +36,13 @@ Future<int> saveMoodResult(BuildContext context) async {
     ),
   );
 
-  return moodId; // ✅ Return correct ID for note attachment
+  return moodId; 
 }
 
 
 
 void _saveNote(BuildContext context, int moodId, String note) async {
-  await DatabaseHelper.instance.updateMoodNote(moodId, note); // ✅ Correct mood entry
-
-  print("Note saved!"); // Debugging confirmation
-
+  await DatabaseHelper.instance.updateMoodNote(moodId, note); 
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text("Note saved successfully!"),
@@ -58,24 +51,9 @@ void _saveNote(BuildContext context, int moodId, String note) async {
   );
 }
 
-Future<void> updateMoodNote(int moodId, String note) async {
-  final Database db = await DatabaseHelper.instance.database;
-
-  await db.update(
-    'moods', 
-    {'note': note},
-    where: 'id = ?',
-    whereArgs: [moodId], // ✅ Ensure correct mood ID is updated
-  );
-
-  print("Updated Mood ID: $moodId with Note: $note"); // Debugging
-}
-
-
 
  void _showAddNoteDialog(BuildContext context, int moodId) {
     TextEditingController _noteController = TextEditingController();
-
     showDialog(
       context: context,
       builder: (context) {
@@ -92,9 +70,7 @@ Future<void> updateMoodNote(int moodId, String note) async {
             ),
             TextButton(
               onPressed: () {
-                if (_noteController.text.isNotEmpty) {
                   _saveNote(context, moodId, _noteController.text);
-                }
                 Navigator.pop(context);
               },
               child: Text("Save"),
@@ -119,15 +95,11 @@ Future<void> updateMoodNote(int moodId, String note) async {
             SizedBox(height: 8,),
             ElevatedButton(
               onPressed: () async {
-                int moodId = await saveMoodResult(context); // ✅ Ensure mood ID is retrieved first
-
-                print("Latest Mood ID for note attachment: $moodId"); // Debugging
+                int moodId = await saveMoodResult(context); 
 
                 if (moodId != 0) {
-                  _showAddNoteDialog(context, moodId); // ✅ Ensure correct mood entry is updated
-                } else {
-                  print("Error: Mood ID is invalid."); // Debugging if something goes wrong
-                }
+                  _showAddNoteDialog(context, moodId); 
+                } 
               },
               child: const Text('Save Result & Add Note'),
             ),

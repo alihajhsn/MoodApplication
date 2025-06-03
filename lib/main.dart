@@ -1,20 +1,17 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:mood_application_project/database/database_helper.dart';
 import 'package:mood_application_project/screens/moodhistory.dart';
 import 'models/mood.dart';
 import 'data/questions.dart';
 import 'screens/startscreen.dart';
 import 'screens/questionscreen.dart';
 import 'screens/resultscreen.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Ensure async functions work
- 
 
 
-  runApp(MoodTestApp()); // Start the app after deletion
+  runApp(MoodTestApp()); 
 }
 
 
@@ -70,11 +67,12 @@ class _MoodTestAppState extends State<MoodTestApp> {
     });
   }
 
-    void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index; // Reset questions when switching tabs
-      
-    });}
+void _onItemTapped(int index) {
+  setState(() {
+    _selectedIndex = index;
+  });
+}
+
 
 
 
@@ -95,7 +93,7 @@ class _MoodTestAppState extends State<MoodTestApp> {
               MaterialPage(
                 child: ResultScreen(
                   
-                  onRestart: restartTest, resultMood: finalResult, onSuggest: () { },
+                  onRestart: restartTest, resultMood: finalResult,
                 ),
               )
             else

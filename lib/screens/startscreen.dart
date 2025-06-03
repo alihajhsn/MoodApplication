@@ -16,7 +16,7 @@ class StartScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'Welcome',
+              'Welcome to The Mood Test!',
               style: TextStyle(fontSize: 20, color: Colors.white),
             ),
             const SizedBox(height: 20),

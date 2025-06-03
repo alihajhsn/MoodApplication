@@ -1,13 +1,13 @@
 // lib/screens/questionscreen.dart
 import 'package:flutter/material.dart';
 import '../models/question.dart';
-import '../screens/startscreen.dart';
 
 class QuestionScreen extends StatelessWidget {
   final Question question;
   final Function(int) onAnswerSelected;
   final VoidCallback onStartTest;
 
+  
   const QuestionScreen({
     Key? key,
     required this.question,
